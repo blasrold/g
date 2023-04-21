@@ -1,0 +1,478 @@
+import os
+import re
+
+main={0:[]}
+
+def editPlan():
+    temp = main
+    loop = True
+    while loop == True:
+        os.system('cls')
+        print('\n┌────────────────────────────────────────────────────────────────────────────────┐')
+        print('\n{:^82}'.format('Take note that EDITING any values will automatically update the rest'))
+        print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+        print('\n┌────────────────────────────────────────────────────────────BUDGET PLAN EDITING─┐\n')
+        if not temp[0]:
+            print('{:^82}'.format('no saved budget plan yet'))
+        else:
+            print('{:>15.15}{:>15.15}{:>15.15}\n'.format('CATEGORY','PERCENT','BUDGET'))
+            for i in temp[0]:
+                print('{:>15.15}{:>15.15}{:>15.15}'.format(i[0]+':',f'{i[1]} %',f'{i[2]} ₱'))
+            percent = sum(i[1] for i in temp[0])
+            total = sum(i[2] for i in temp[0])
+            print('\n{:>15.15}{:>15.15}{:>15.15}'.format('TOTAL BUDGET:',f'{percent} %',f'{total} ₱'))
+        print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+
+        if not temp[0]: # if wala laman,
+            return # exit
+        
+        print('\nEnter column to edit:\n1. CATEGORY\n2. PERCENT\n3. BUDGET\n4. TOTAL BUDGET\n5. SAVE CHANGES & EXIT\n6. REVERT CHANGES & EXIT\n')
+        column = input('> ')
+        
+        if column.isspace() or column == '' or column not in ['1','2','3','4','5','6']:
+            continue
+
+        if column == '2':
+            print('\nEnter new percentage (values should total to 100 %):\n')
+            total = []
+            try:
+                for category in temp[0]:
+                    total.append(float(input(f'{category[0]} > % ')))
+                if sum(total) != 100:
+                    print('\nERROR: values should total to 100 %\n')
+                    os.system('pause')
+                else:
+                    x = 0
+                    for category in temp[0]: # update %
+                        category[1] = total[x]
+                        x += 1
+                    total = sum(i[2] for i in temp[0]) # get budget total
+                    for category in temp[0]: # update indiv budget according to total
+                        category[2] = category[1]/100*total
+            except:
+                print('\nERROR: value should contain only digits\n')
+                os.system('PAUSE')
+            continue
+
+        if column == '4':
+            print('\nEnter your new total budget:\n')
+            try:
+                new = float(input('> '))                
+                for category in temp[0]: # [a,0,0], [b,0,0]
+                    category[2] = category[1]/100*new # update individual budgets
+            except:
+                print('\nERROR: value should contain only digits\n')
+                os.system('pause')
+            continue
+
+        if column == '5':
+            main[0] = temp[0]
+            loop = False
+            continue
+        if column == '6':
+            loop = False
+            continue
+
+
+        print('\nEnter category:\n')
+        choice = input('> ')
+
+        found = False
+        for category in temp[0]: # [a,0,0], [b,0,0]
+            for idx, i in enumerate(category): # [a,0,0]
+                if i == choice:
+
+                    if column == '1':
+                        print(f'\nChange {choice} into:\n')
+                        new = input('> ')
+                        if new.isspace() or new == '' or new.isdigit():
+                            print('\nERROR: value should contain non-digit characters\n')
+                        category[idx] = new
+
+                    elif column == '3':
+                        try:
+                            print(f'\nChange {category[idx+2]} ₱ into:\n')
+                            new = input('> ')
+                            '''
+                            if new.isspace() or new == '':
+                                print('\nERROR: value should contain digits\n')
+                                os.system('pause')
+                                continue
+                            '''
+                            category[idx+2] = float(new)
+                        except:
+                            print('\nERROR: value should only contain digits\n')
+                            
+                    found = True
+                    os.system('pause')
+                    continue
+        if found == False:
+            print('\nERROR: category not found\n')
+            os.system('pause')
+                
+def setPlan():
+    try:
+        print('\n┌────────────────────────────────────────────────────────────────────────────────┐')
+        print('\n{:^82}'.format('The BUDGET PLAN dictates the categories of expenses to be used as you add an entry'))
+        print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+        
+        print('\nEnter your budget categories, separated with comma (ex: a, b, c, d):\nEnter \'edit\' to change pre-existing values.\nEnter \'default\' to use predefined categories.\n')
+        loop = True
+        while loop == True:
+            enter = input('> ')
+            if enter.lower() == 'edit':
+                editPlan()
+                return
+            elif enter.lower() == 'default':
+                enter = 'Housing Transportation Food Utilities Healthcare Entertainment Misc'
+                loop = False
+            else:
+                cat = dict.fromkeys(enter.split(', '),[])
+                if any(map(lambda i: i.isdigit(), cat.keys())):
+                    print('ERROR: Categories should be non-digit strings')
+                    pass
+                elif not any(cat):
+                    loop = False
+                    return
+                else:
+                    loop = False
+            
+        print('\nEnter your %% allocation for those categories, totalling to 100:')
+        if enter == 'Housing Transportation Food Utilities Healthcare Entertainment Misc':
+            print('Enter \'default\' to use predefined values')
+        
+        print('')
+        total = 0
+        for i in cat:
+            alloc = input(f'{i} > % ')
+            if alloc.lower() == 'default':
+                cat['Housing']=[30.0]
+                cat['Transportation']=[15.0]
+                cat['Food']=[10.0]
+                cat['Utilities']=[10.0]
+                cat['Healthcare']=[5.0]
+                cat['Entertainment']=[10.0]
+                cat['Misc']=[20.0]
+                total=100
+                break
+            else:
+                alloc=float(alloc)
+                cat[i] = [round(alloc,1)]
+                total += alloc
+                if total > 100 or alloc < 0:
+                    print('ERROR: Values should be more than 0 and should not exceed 100%')
+                    return
+        if total != 100:
+            print('ERROR: Values should total 100%')
+            return
+
+        print('\n1. allocate budget individually\n2. set total budget only\n')
+        choice = input('> ')
+        if choice == '1':
+            for i in cat:
+                budget=float(input(f'{i} > ₱ '))
+                cat[i].append(round(budget,1))
+                if budget < 0:
+                    print('ERROR: Values should be more than 0')
+                    return
+        elif choice == '2':
+            total = float(input('> ₱ '))
+            for i in cat:
+                bud=(cat[i][0]/100)*total
+                cat[i].append(round(bud,1))
+                if total < 0:
+                    print('ERROR: Values should be more than 0')
+                    return
+        else:
+            return
+
+        print('\n┌────────────────────────────────────────────────────────────────────────────────┐')
+        print('{:>15.15}{:>15.15}{:>15.15}\n'.format('CATEGORY','PERCENT','BUDGET'))
+        for k,v in cat.items():
+            if v[0]:
+                print('{:>15.15}{:>15.15}{:>15.15}'.format(k+':',f'{v[0]} %',f'{v[1]} ₱'))
+        print('\n{:>15.15}{:>30}'.format('TOTAL BUDGET:',f'{total} ₱'))
+        print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+        print('Do you want to confirm this info? (y/n)')
+
+        choice=input('> ')
+        if choice.lower()=='y':
+            main[0]=[]
+            for i in cat:
+                if cat[i][0]:
+                    main[0].append([i,cat[i][0],cat[i][1],0,0])
+    except:
+        print('ERROR: Values should be a valid float or integer')
+    return
+
+def addEntry():
+    print('\n┌────────────────────────────────────────────────────────────────────────────────┐')
+    print('\n{:^82}'.format('Add an ENTRY of your monthly expenses which will be saved to memory\nor enter the date of an existing one to delete them'))
+    print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+    if not any(main[0]):
+        print('\nA budget plan has not yet been set.\n')
+        return
+    print('\nEnter a date in YYYY-MM format, (ex: 2023-04):\n')
+    month=input('> ')
+
+    if not re.match(r'\d{4}-\d{2}',month):
+        print('\nERROR: Month did not match format\n')
+        return
+    if month in main:
+        print('\nThere is already an existing entry using this date,\n1. continue editing\n2. delete entry\n')
+        choice=input('> ')
+        if choice == '1':
+           pass
+        elif choice == '2':
+            del main[month]
+            print('\nEntry is now deleted\n')
+            return
+        else:
+            return
+
+    print('\nWhat savings plan will you use?.\n1. current savings plan')
+    if month in main:
+        print('2. keep using the existing plans of the entry\n')
+        choice=input('> ')
+        if choice == '2':
+            temp={month:main[month]}
+        elif choice =='1':
+            temp={month:main[0]}
+    else:
+        choice=input('> ')
+        if choice == '1':
+            temp={month:main[0]}
+        else:
+            return
+
+        
+    try:
+        os.system('cls')
+        
+        mark=['>']+['']*(len(temp[month])-1)
+        for category in temp[month]:
+            count = 0
+            print(f'\n┌────────────────────────────────────────────────────────────────────────{month}─┐\n')
+            print('{:>15.15}{:>15.15}{:>15.15}{:>15.15}{:>15.15}\n'.format('CATEGORY','PERCENT','BUDGET','EXPENSES','SAVINGS'))
+            for cat in temp[month]:
+                print('{:>15.15}{:>15.15}{:>15.15}{:>15.15}'.format(cat[0]+':',f'{cat[1]} %',f'{cat[2]} ₱',f'{mark[count]} ₱'))
+                count+=1
+            if not all(mark):
+                mark[mark.index('')] = '>'
+            print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+            value=round(float(input('> ')),1)
+            category[3]=value
+            mark[mark.index('>')] = value
+            if value < 0:
+                print('ERROR: Negative values cannot be entered')
+                return
+            os.system('cls')
+        os.system('cls')
+    except:
+        print('ERROR: Values should be a valid float or integer')
+        return
+
+    count = 0
+    print(f'\n┌────────────────────────────────────────────────────────────────────────{month}─┐\n')
+    print('{:>15.15}{:>15.15}{:>15.15}{:>15.15}{:>15.15}\n'.format('CATEGORY','PERCENT','BUDGET','EXPENSES','SAVINGS'))
+    for category in temp[month]:
+        category[4]=category[2]-category[3]
+        print('{:>15.15}{:>15.15}{:>15.15}{:>15.15}{:>15.15}'.format(category[0]+':',f'{category[1]} %',f'{category[2]} ₱', f'{category[3]} ₱',f'{category[4]} ₱'))
+        count+=1
+
+    tbud = sum(category[2] for category in temp[month])
+    texp = sum(category[3] for category in temp[month])
+    tsav = tbud-texp
+    print('\n{:>15.15}{:>30}{:>15.15}{:>15.15}'.format('TOTAL:',f'{tbud} ₱',f'{texp} ₱',f'{tsav} ₱'))
+    print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+    print('Do you want to confirm this entry? (y/n)\n')
+    choice=input('> ')
+    if choice.lower() == 'y':
+        if month in main:
+            print('\nDo you want to keep using this entry\'s savings plan? (y/n)\n')
+            choice=input('> ')
+            if choice.lower() == 'y':
+                main[0] = temp[month]
+        main[month] = temp[month]
+    return      
+
+def displayEntries():
+    print('\n┌────────────────────────────────────────────────────────────────────────────────┐')
+    print('\n{:^82}'.format('Here are more detailed info for each DATE of expenses'))
+    print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+    for month, info in main.items():
+        if month not in [0,'0']:
+            print(f'\n┌────────────────────────────────────────────────────────────────────────{month}─┐\n')
+            print('{:>15.15}{:>15.15}{:>15.15}{:>15.15}{:>15.15}\n'.format('CATEGORY','PERCENT','BUDGET','EXPENSES','SAVINGS'))
+            for category in info:
+                print('{:>15.15}{:>15.15}{:>15.15}{:>15.15}{:>15.15}'.format(category[0]+':',f'{category[1]} %',f'{category[2]} ₱',f'{category[3]} ₱',f'{category[4]} ₱'))
+            tbud = sum(i[2] for i in info)
+            texp = sum(i[3] for i in info)
+            tsav = tbud-texp
+            print('\n{:>15.15}{:>30}{:>15.15}{:>15.15}'.format('TOTAL:',f'{tbud} ₱',f'{texp} ₱',f'{tsav} ₱'))
+            print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+    if not any(main.keys()):
+        print('\n┌────────────────────────────────────────────────────────────────────────XXXX XX─┐')
+        print('\n{:^82}'.format('there are no saved entries yet'))
+        print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+
+def displayPlan():
+    
+    print('\n┌──────────────────────────────────────────────────────────LAST USED BUDGET PLAN─┐\n')
+
+    if not main[0]:
+        print('{:^82}'.format('no saved budget plan yet'))
+    else:
+        print('{:>15.15}{:>15.15}{:>15.15}\n'.format('CATEGORY','PERCENT','BUDGET'))
+        for i in main[0]:
+            print('{:>15.15}{:>15.15}{:>15.15}'.format(i[0]+':',f'{i[1]} %',f'{i[2]} ₱'))
+        total = sum(i[2] for i in main[0])
+        print('\n{:>15.15}{:>30}'.format('TOTAL BUDGET:',f'{total} ₱'))
+    print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+    if any(main.keys()):  
+        print('\n┌────────────────────────────────────────────────────────────────────────────────┐\n')
+        print('{:>15.15}{:>15.15}{:>15.15}{:>15.15}\n'.format('DATE','BUDGET','EXPENSES','SAVINGS'))
+        totalBud,totalExp,totalSav=0,0,0
+        for month in main:
+            if month not in [0,'0']:
+                bud=sum([category][0][2] for category in main[month])
+                exp=sum([category][0][3] for category in main[month])
+                sav=sum([category][0][4] for category in main[month])
+                totalBud+=bud
+                totalExp+=exp
+                totalSav+=sav
+                print('{:>15.15}{:>15.15}{:>15.15}{:>15.15}'.format(month,f'{bud} ₱',f'{exp} ₱',f'{sav} ₱'))
+        print('\n{:>15.15}{:>15.15}{:>15.15}{:>15.15}'.format('TOTAL:',f'{totalBud} ₱',f'{totalExp} ₱',f'{totalSav} ₱'))
+        print('\n└────────────────────────────────────────────────────────────────────────────────┘')
+
+def saveToFile():
+    print("\nEnter the filename to save as\nAny existing files will be overwritten\n")
+    filename = input("> ")
+    if filename.isspace() or filename=='':
+        print('\nERROR: filename should contain characters\n')
+        return
+
+    print("\n1. Save info\n2. Export info to readable text")
+    loop = True
+    while loop == True:
+        choice = input('> ')
+        if choice == '1':
+            with open(f'{filename}.bp', 'w') as file:
+                for month, info in main.items():
+                    file.write(f'Month: {month}\n')
+                    for category in info:
+                        file.write(f'Category: {category[0]}\n')
+                        file.write(f'Percent: {category[1]}\n')
+                        file.write(f'Budget: {category[2]}\n')
+                        file.write(f'Expenses: {category[3]}\n')
+                        file.write(f'Savings: {category[4]}\n')
+                    file.write('\n')
+            print(f'Successfully saved to {filename}.bp') 
+            loop = False
+        elif choice == '2':  
+            with open(f'{filename}.txt', 'w', encoding='utf-8') as file:
+                for month, info in main.items():
+                    if month not in [0,'0']:
+                        file.write(f'\n┌────────────────────────────────────────────────────────────────────────{month}─┐\n')
+                        file.write('{:>15.15}{:>15.15}{:>15.15}{:>15.15}{:>15.15}\n'.format('CATEGORY','PERCENT','BUDGET','EXPENSES','SAVINGS'))
+                        for category in info:
+                            file.write('{:>15.15}{:>15.15}{:>15.15}{:>15.15}{:>15.15}'.format(category[0]+':',f'{category[1]} %',f'{category[2]} ₱',f'{category[3]} ₱',f'{category[4]} ₱\n'))
+                        tbud = sum(i[2] for i in info)
+                        texp = sum(i[3] for i in info)
+                        tsav = tbud-texp
+                        file.write('\n{:>15.15}{:>30}{:>15.15}{:>15.15}'.format('TOTAL:',f'{tbud} ₱',f'{texp} ₱',f'{tsav} ₱'))
+                        file.write('\n└────────────────────────────────────────────────────────────────────────────────┘')
+            print(f'Successfully saved to {filename}.txt') 
+            loop = False
+        else:
+            pass
+
+def loadFromFile():
+    print("\nEnter the filename to load from.\nAny existing plans will be overwritten.\n")
+    filename = input("> ")
+    temp = {}
+    try:
+        with open(f'{filename}.bp', 'r') as file:
+            month = None
+            for line in file:
+                if line.startswith('Month:'):
+                    month = line.strip().split(': ')[1]
+                    if month=='0':
+                        month=int(month)
+                    temp[month] = []
+                elif line.startswith('Category:'):
+                    category = line.strip().split(': ')[1]
+                elif line.startswith('Percent:'):
+                    percent = float(line.strip().split(': ')[1])
+                elif line.startswith('Budget:'):
+                    budget = float(line.strip().split(': ')[1])
+                elif line.startswith('Expenses:'):
+                    expenses = float(line.strip().split(': ')[1])
+                elif line.startswith('Savings:'):
+                    savings = float(line.strip().split(': ')[1])
+                    temp[month].append([category, percent, budget, expenses, savings])
+        for k, v in temp.items():
+            temp[k] = sorted(v)
+        
+        print(f'Successfully loaded from {filename}.bp')
+    except:
+        print('\nFilename not found\n')
+        return
+    
+
+    print('\n1. Load plan\n2. Load budget history\n3. Load both\n')
+    loop = True # declare bool
+    while loop == True: # start loop
+        choice = input('> ')
+        if choice == '1': # if tama input
+            delete = [k for k in temp if k != 0]
+            for k in delete:
+                del temp[k]
+            loop = False # then stop loop
+        elif choice == '2':
+            if 0 in main:
+                del temp[0]
+            else:
+                temp[0] = []
+            loop = False
+        elif choice == '3':
+            pass
+            loop = False
+        else: # if hindi
+            pass # walang loop = False
+    main.update(temp)
+
+
+exit = False
+while exit == False:
+    os.system('cls')
+    print('''
+    ▓▓▓  ▓  ▓ ▓▓▓   ▓▓▓ ▓▓▓▓ ▓▓▓▓           ▓▓▓  ▓     ▓▓  ▓  ▓ ▓  ▓ ▓▓▓▓ ▓▓▓
+    ▓ ▓  ▓  ▓ ▓  ▓ ▓    ▓▓▓   ▓             ▓  ▓ ▓    ▓  ▓ ▓▓ ▓ ▓▓ ▓ ▓▓▓  ▓  ▓
+    ▓▓ ▓ ▓▓▓▓ ▓  ▓ ▓ ▓▓ ▓     ▓             ▓▓▓  ▓    ▓▓▓▓ ▓ ▓▓ ▓ ▓▓ ▓    ▓▓▓
+    ▓▓▓▓ ▓▓▓▓ ▓▓▓   ▓▓▓ ▓▓▓▓  ▓             ▓    ▓▓▓▓ ▓  ▓ ▓  ▓ ▓  ▓ ▓▓▓▓ ▓  ▓
+    ''')
+    displayPlan()
+    print('\n1. edit budget plan'
+          '\n2. add or edit monthly entry'
+          '\n3. view all entries'
+          '\n4. save file'
+          '\n5. load file'
+          '\nq. quit\n')
+    choice=input('> ')
+    os.system('cls')
+    if choice.lower()=='q': # quit
+        print('exiting program...')
+        exit=True
+    elif choice=='1': # edit budget plan
+        setPlan()               
+    elif choice=='2': # add entry
+        addEntry()
+    elif choice=='3': # view entries in detail
+        displayEntries()
+    elif choice=='4': # save file
+        saveToFile()
+    elif choice=='5': # load file
+        loadFromFile()
+
+    os.system('pause')
